@@ -51,6 +51,7 @@ enum class DeviceSubscriptionTypeEnum
 {
     None,
     OpenCL,
+    Sha3OpenCL,
     Cuda,
     Cpu
 
@@ -60,6 +61,7 @@ enum class MinerType
 {
     Mixed,
     CL,
+    SHA3CL,
     CUDA,
     CPU
 };
