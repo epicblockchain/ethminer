@@ -28,6 +28,9 @@
 #if ETH_ETHASHCL
 #include <libethash-cl/CLMiner.h>
 #endif
+#if ETH_KECCAKCL
+#include <libkeccak-cl/KeccakCLMiner.h>
+#endif
 #if ETH_ETHASHCUDA
 #include <libethash-cuda/CUDAMiner.h>
 #endif
@@ -229,6 +232,9 @@ public:
 #if ETH_ETHASHCL
                     "cl",
 #endif
+#if ETH_KECCAKCL
+                    "kcl",
+#endif
 #if ETH_ETHASHCUDA
                     "cu",
 #endif
@@ -307,13 +313,13 @@ public:
 
 #endif
 
-#if ETH_ETHASHCL || ETH_ETHASHCUDA || ETH_ETHASH_CPU
+#if ETH_ETHASHCL || ETH_KECCAKCL || ETH_ETHASHCUDA || ETH_ETHASH_CPU
 
         app.add_flag("--list-devices", m_shouldListDevices, "");
 
 #endif
 
-#if ETH_ETHASHCL
+#if ETH_ETHASHCL || ETH_KECCAKCL
 
         app.add_option("--opencl-device,--opencl-devices,--cl-devices", m_CLSettings.devices, "");
 
@@ -358,6 +364,9 @@ public:
 
         bool cl_miner = false;
         app.add_flag("-G,--opencl", cl_miner, "");
+
+        bool cl_keccak_miner = false;
+        app.add_flag("--keccak", cl_keccak_miner, "");
 
         bool cuda_miner = false;
         app.add_flag("-U,--cuda", cuda_miner, "");
@@ -407,6 +416,8 @@ public:
 
         if (cl_miner)
             m_minerType = MinerType::CL;
+        else if (cl_keccak_miner)
+            m_minerType = MinerType::KECCAKCL;
         else if (cuda_miner)
             m_minerType = MinerType::CUDA;
         else if (cpu_miner)
@@ -511,6 +522,10 @@ public:
         if (m_minerType == MinerType::CL || m_minerType == MinerType::Mixed)
             CLMiner::enumDevices(m_DevicesCollection);
 #endif
+#if ETH_KECCAKCL
+        if (m_minerType == MinerType::KECCAKCL || m_minerType == MinerType::Mixed)
+            KeccakCLMiner::enumDevices(m_DevicesCollection);
+#endif
 #if ETH_ETHASHCUDA
         if (m_minerType == MinerType::CUDA || m_minerType == MinerType::Mixed)
             CUDAMiner::enumDevices(m_DevicesCollection);
@@ -543,10 +558,14 @@ public:
             if (m_minerType == MinerType::CL || m_minerType == MinerType::Mixed)
                 cout << setw(5) << "CL   ";
 #endif
+#if ETH_KECCAKCL
+            if (m_minerType == MinerType::KECCAKCL)
+                cout << setw(5) << "KECCAKCL   ";
+#endif
             cout << resetiosflags(ios::left) << setw(13) << "Total Memory"
                  << " ";
-#if ETH_ETHASHCL
-            if (m_minerType == MinerType::CL || m_minerType == MinerType::Mixed)
+#if ETH_ETHASHCL || ETH_KECCAKCL
+            if (m_minerType == MinerType::CL || m_minerType == MinerType::KECCAKCL || m_minerType == MinerType::Mixed)
             {
                 cout << resetiosflags(ios::left) << setw(13) << "Cl Max Alloc"
                      << " ";
@@ -568,14 +587,14 @@ public:
                 cout << setw(4) << "--- ";
             }
 #endif
-#if ETH_ETHASHCL
-            if (m_minerType == MinerType::CL || m_minerType == MinerType::Mixed)
+#if ETH_ETHASHCL || ETH_KECCAKCL
+            if (m_minerType == MinerType::CL || m_minerType == MinerType::KECCAKCL || m_minerType == MinerType::Mixed)
                 cout << setw(5) << "---- ";
 #endif
             cout << resetiosflags(ios::left) << setw(13) << "------------"
                  << " ";
-#if ETH_ETHASHCL
-            if (m_minerType == MinerType::CL || m_minerType == MinerType::Mixed)
+#if ETH_ETHASHCL || ETH_KECCAKCL
+            if (m_minerType == MinerType::CL || m_minerType == MinerType::KECCAKCL || m_minerType == MinerType::Mixed)
             {
                 cout << resetiosflags(ios::left) << setw(13) << "------------"
                      << " ";
@@ -613,14 +632,14 @@ public:
                     cout << setw(4) << it->second.cuCompute;
                 }
 #endif
-#if ETH_ETHASHCL
-                if (m_minerType == MinerType::CL || m_minerType == MinerType::Mixed)
+#if ETH_ETHASHCL || ETH_KECCAKCL
+                if (m_minerType == MinerType::CL || m_minerType == MinerType::KECCAKCL || m_minerType == MinerType::Mixed)
                     cout << setw(5) << (it->second.clDetected ? "Yes" : "");
 #endif
                 cout << resetiosflags(ios::left) << setw(13)
                      << getFormattedMemory((double)it->second.totalMemory) << " ";
-#if ETH_ETHASHCL
-                if (m_minerType == MinerType::CL || m_minerType == MinerType::Mixed)
+#if ETH_ETHASHCL || ETH_KECCAKCL
+                if (m_minerType == MinerType::CL || m_minerType == MinerType::KECCAKCL || m_minerType == MinerType::Mixed)
                 {
                     cout << resetiosflags(ios::left) << setw(13)
                          << getFormattedMemory((double)it->second.clMaxMemAlloc) << " ";
@@ -676,6 +695,26 @@ public:
             }
         }
 #endif
+#if ETH_KECCAKCL
+        if (m_CLSettings.devices.size() &&
+            (m_minerType == MinerType::CL || m_minerType == MinerType::KECCAKCL || m_minerType == MinerType::Mixed))
+        {
+            for (auto index : m_CLSettings.devices)
+            {
+                if (index < m_DevicesCollection.size())
+                {
+                    auto it = m_DevicesCollection.begin();
+                    std::advance(it, index);
+                    if (!it->second.clDetected)
+                        throw std::runtime_error("Can't OpenCL subscribe a non-OpenCL device.");
+                    if (it->second.subscriptionType != DeviceSubscriptionTypeEnum::None)
+                        throw std::runtime_error(
+                            "Can't OpenCL subscribe a CUDA subscribed device.");
+                    it->second.subscriptionType = DeviceSubscriptionTypeEnum::KeccakOpenCL;
+                }
+            }
+        }
+#endif
 #if ETH_ETHASHCPU
         if (m_CPSettings.devices.size() && (m_minerType == MinerType::CPU))
         {
@@ -716,6 +755,19 @@ public:
                     it->second.subscriptionType != DeviceSubscriptionTypeEnum::None)
                     continue;
                 it->second.subscriptionType = DeviceSubscriptionTypeEnum::OpenCL;
+            }
+        }
+#endif
+#if ETH_KECCAKCL
+        if (!m_CLSettings.devices.size() &&
+            (m_minerType == MinerType::CL || m_minerType == MinerType::KECCAKCL || m_minerType == MinerType::Mixed))
+        {
+            for (auto it = m_DevicesCollection.begin(); it != m_DevicesCollection.end(); it++)
+            {
+                if (!it->second.clDetected ||
+                    it->second.subscriptionType != DeviceSubscriptionTypeEnum::None)
+                    continue;
+                it->second.subscriptionType = DeviceSubscriptionTypeEnum::KeccakOpenCL;
             }
         }
 #endif
@@ -771,6 +823,9 @@ public:
 #if ETH_ETHASHCL
              << "    -G,--opencl         Mine/Benchmark using OpenCL only" << endl
 #endif
+#if ETH_KECCAKCL
+             << "    --keccak              Mine/Benchmark using Keccak OpenCL only" << endl
+#endif
 #if ETH_ETHASHCUDA
              << "    -U,--cuda           Mine/Benchmark using CUDA only" << endl
 #endif
@@ -796,6 +851,9 @@ public:
 #if ETH_ETHASHCL
              << "cl,"
 #endif
+#if ETH_KECCAKCL
+             << "kcl,"
+#endif
 #if ETH_ETHASHCUDA
              << "cu,"
 #endif
@@ -811,6 +869,9 @@ public:
              << "                        'test' Benchmark/Simulation options" << endl
 #if ETH_ETHASHCL
              << "                        'cl'   Extended OpenCL options" << endl
+#endif
+#if ETH_KECCAKCL
+             << "                        'kcl'   Extended Keccak OpenCL options" << endl
 #endif
 #if ETH_ETHASHCUDA
              << "                        'cu'   Extended CUDA options" << endl

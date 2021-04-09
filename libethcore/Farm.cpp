@@ -22,6 +22,10 @@
 #include <libethash-cl/CLMiner.h>
 #endif
 
+#if ETH_KECCAKCL
+#include <libkeccak-cl/KeccakCLMiner.h>
+#endif
+
 #if ETH_ETHASHCUDA
 #include <libethash-cuda/CUDAMiner.h>
 #endif
@@ -277,6 +281,15 @@ bool Farm::start()
                 minerTelemetry.prefix = "cl";
                 m_miners.push_back(std::shared_ptr<Miner>(
                     new CLMiner(m_miners.size(), m_CLSettings, it->second)));
+            }
+#endif
+#if ETH_KECCAKCL
+
+            if (it->second.subscriptionType == DeviceSubscriptionTypeEnum::KeccakOpenCL)
+            {
+                minerTelemetry.prefix = "sc";
+                m_miners.push_back(std::shared_ptr<Miner>(
+                    new KeccakCLMiner(m_miners.size(), m_CLSettings, it->second)));
             }
 #endif
 #if ETH_ETHASHCPU
