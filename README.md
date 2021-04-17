@@ -1,3 +1,17 @@
+# How to mine ETC [Astor Testnet](https://astor.host/node/)
+
+
+* Run a node
+```sh
+docker run --network host -p 8545:8545 tmio/besu-keccak --rpc-http-enabled --rpc-http-api=admin,eth,debug,miner,net,txpool,priv,trace,web3 --rpc-http-cors-origins="all" --network=ecip1049_dev --miner-enabled --miner-coinbase=fe3b557e8fb62b89f4916b721be55ceb828dbd73 --miner-stratum-enabled --miner-stratum-host=0.0.0.0
+```
+* Run a miner
+```sh
+ethminer -P stratum+tcp://0x09a7839a84c3c38b6baffda88ca457ecf8943fed.gpu:x@127.0.0.1:8008 --keccak --noeval
+```
+
+---
+
 # ethminer
 
 [![standard-readme compliant](https://img.shields.io/badge/readme%20style-standard-brightgreen.svg)](https://github.com/RichardLitt/standard-readme)
