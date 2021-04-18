@@ -3,7 +3,7 @@
 
 * Run a node
 ```sh
-docker run --network host -p 8545:8545 tmio/besu-keccak --rpc-http-enabled --rpc-http-api=admin,eth,debug,miner,net,txpool,priv,trace,web3 --rpc-http-cors-origins="all" --network=ecip1049_dev --miner-enabled --miner-coinbase=fe3b557e8fb62b89f4916b721be55ceb828dbd73 --miner-stratum-enabled --miner-stratum-host=0.0.0.0
+docker run --network host hyperledger/besu --rpc-http-enabled --rpc-http-api=admin,eth,debug,miner,net,txpool,priv,trace,web3 --rpc-http-cors-origins="all" --network=ecip1049_dev --miner-enabled --miner-coinbase=fe3b557e8fb62b89f4916b721be55ceb828dbd73 --miner-stratum-enabled --miner-stratum-host=0.0.0.0
 ```
 * Run a miner
 ```sh
