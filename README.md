@@ -1,4 +1,4 @@
-# How to mine ETC [Astor Testnet](https://astor.host/node/)
+# How to mine ETC on ecip1049_dev network
 
 
 * Run a node
